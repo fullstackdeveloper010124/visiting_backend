@@ -1,0 +1,15 @@
+{
+  "ignore": [
+    "data/*",
+    "mongodb/*",
+    "*.log",
+    "list_db_products.js"
+  ],
+  "watch": [
+    "server.js",
+    "db.js",
+    "routes/",
+    "models/",
+    "middleware/"
+  ]
+}
