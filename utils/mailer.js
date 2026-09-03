@@ -16,6 +16,7 @@ const createSmtpTransporter = () => {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
       secure: process.env.SMTP_SECURE === 'true',
+      requireTLS: process.env.SMTP_SECURE !== 'true',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -37,17 +38,14 @@ const sendMailWithSmtp = async (mailOptions) => {
     return;
   }
 
-  void transporter.verify().then(() => {
-    console.log('[MAILER] SMTP transporter verified successfully.');
-  }).catch((verifyErr) => {
-    console.error('[MAILER] SMTP transporter verification failed:', verifyErr);
-  });
-
   try {
+    await transporter.verify();
+    console.log('[MAILER] SMTP transporter verified successfully.');
     await transporter.sendMail(mailOptions);
     console.log(`[MAILER] Email successfully sent to ${mailOptions.to}`);
   } catch (err) {
     console.error('[MAILER] SMTP send failed:', err);
+    throw err;
   }
 };
 
@@ -202,14 +200,14 @@ The PrintFlow Team
     .catch((err) => console.error('[MAILER] Failed to write account approval HTML log:', err));
 
   const smtpPromise = sendMailWithSmtp({
-    from: `"PrintFlow Team" <${process.env.SMTP_USER || 'admin@printflow.com'}>`,
+    from: `"PrintFlow Team" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: 'Your PrintFlow Account Has Been Accepted',
     text: emailText,
     html: emailHtml,
   });
 
-  void Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
+  await Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
 };
 
 export const sendApprovalConfirmationEmail = async (toEmail, approvalId, designType) => {
@@ -306,14 +304,14 @@ The PrintFlow Team
     .catch((err) => console.error('[MAILER] Failed to write pending approval HTML log:', err));
 
   const smtpPromise = sendMailWithSmtp({
-    from: `"PrintFlow Team" <${process.env.SMTP_USER || 'admin@printflow.com'}>`,
+    from: `"PrintFlow Team" <${process.env.SMTP_USER}>`,
     to: toEmail,
     subject: 'PrintFlow Registration - Pending Approval',
     text: emailText,
     html: emailHtml,
   });
 
-  void Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
+  await Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
 };
 
 export const sendWelcomeEmail = async (toEmail, fullName) => {
@@ -365,7 +363,7 @@ The PrintFlow Team
     html: emailHtml,
   });
 
-  void Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
+  await Promise.allSettled([logPromise, htmlLogPromise, smtpPromise]);
 };
 
 export const sendInvoiceEmail = async (toEmail, invoiceDetails) => {
